@@ -30,7 +30,7 @@ my $collector = GRNOC::OESS::Collector::Master->new(
     daemonize => !$nofork
     );
 
-$collector->run();
+$collector->start();
 
 sub usage {
     print "$0 [--config <config_file>] [--logging <logging_file>] [--pidfile pidfile]\n";
