@@ -1,8 +1,10 @@
-<config>
-  <rabbitmq host='127.0.0.1' port='5672'
+<config workers="1">
+  <simp host='127.0.0.1' port='5672'
 	    user='guest' password='guest' />
-  <tsds url='https://somehost/some/push.cgi'
+  <tsds url='https://localhost/path/to/api'
 	user='username' password='password' />
-  <collection interval='60' composite-name='genericIfByName' />
-  <host ip="156.56.6.103" community="byebyeopenflow" node_name="mx240-r0.testlab.grnoc.iu.edu" />
+  <collection interval='60' composite-name='interfaces' />
+  <hosts>
+    <host ip="10.0.0.1" community="community" node_name="host.name.net" />
+  </hosts>
 </config>
