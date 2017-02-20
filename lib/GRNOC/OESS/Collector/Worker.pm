@@ -4,19 +4,33 @@ use strict;
 use warnings;
 
 use Moo;
-use Types::Standard qw(Str Bool);
+use AnyEvent;
 use Data::Dumper;
 
-use AnyEvent;
 use GRNOC::RabbitMQ::Client;
 use GRNOC::OESS::Collector::TSDSPusher;
 
-has logger => (is => 'rwp');
-has simp_config => (is => 'rwp');
-has tsds_config => (is => 'rwp');
-has hosts => (is => 'rwp', default => sub { [] });
-has interval => (is => 'rwp');
-has composite_name => (is => 'rwp');
+has worker_name => (is => 'ro',
+		    required => 1);
+
+has logger => (is => 'rwp',
+	       required => 1);
+
+has simp_config => (is => 'rwp',
+		    required => 1);
+
+has tsds_config => (is => 'rwp',
+		    required => 1);
+
+has hosts => (is => 'rwp',
+	      required => 1);
+
+has interval => (is => 'rwp',
+		 required => 1);
+
+has composite_name => (is => 'rwp',
+		       required => 1);
+
 has simp_client => (is => 'rwp');
 has tsds_pusher => (is => 'rwp');
 has poll_w => (is => 'rwp');
@@ -25,6 +39,9 @@ has msg_list => (is => 'rwp', default => sub { [] });
 
 sub run {
     my ($self) = @_;
+
+    my $logger = GRNOC::Log->get_logger($self->worker_name);
+    $self->_set_logger($logger);
 
     $self->_load_config();
 
@@ -44,6 +61,8 @@ sub _load_config {
 			    ));
 
     $self->_set_tsds_pusher(GRNOC::OESS::Collector::TSDSPusher->new(
+				logger => $self->logger,
+				worker_name => $self->worker_name,
     				tsds_config => $self->tsds_config,
     			    ));
 
@@ -53,15 +72,13 @@ sub _load_config {
     my $composite = $self->composite_name;
     $composite = "interfaces" if !defined($composite);
 
-    $self->logger->info(Dumper($self->hosts));
-
     $self->_set_poll_w(AnyEvent->timer(after => 5, interval => $interval, cb => sub {
 	my $tm = time;
 	
 	foreach my $host (@{$self->hosts}) {
-	    $self->logger->info("processing $host->{'node_name'}");
+	    $self->logger->info($self->worker_name . " processing $host");
 	    my $res = $self->simp_client->$composite(
-		node => $host->{'node_name'},
+		node => $host,
 		period => $interval,
 		async_callback => sub {
 		    my $res = shift;
@@ -72,17 +89,17 @@ sub _load_config {
 	$self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
 				  }));
 
-    $self->logger->info("Done setting up event callbacks");
+    $self->logger->info($self->worker_name . " Done setting up event callbacks");
 }
 
 sub _process_host {
     my ($self, $res, $tm) = @_;
 
     if (!defined($res) || $res->{'error'}) {
-	$self->logger->error("Comp error: " . _error_message($res));
+	$self->logger->error($self->worker_id . " Comp error: " . _error_message($res));
 	return;
     }
-    $self->logger->info(Dumper($res));
+
     foreach my $node_name (keys %{$res->{'results'}}) {
 	my $interfaces = $res->{'results'}->{$node_name};
 	foreach my $intf_name (keys %{$interfaces}) {
@@ -122,7 +139,26 @@ sub _process_host {
 sub _push_data {
     my ($self) = @_;
     my $msg_list = $self->msg_list;
-    $self->tsds_pusher->push($msg_list);
+    my $res = $self->tsds_pusher->push($msg_list);
+    unless ($res) {
+	$self->_set_push_w(undef);
+    }
+}
+
+sub _error_message {
+    my $res = shift;
+    if (!defined($res)) {
+        my $msg = ' [no response object]';
+        $msg .= " \$!='$!'" if defined($!) && ($! ne '');
+        return $msg;
+    }
+
+    my $msg = '';
+    $msg .= " error=\"$res->{'error'}\"" if defined($res->{'error'});
+    $msg .= " error_text=\"$res->{'error_text'}\"" if defined($res->{'error_text'});
+    $msg .= " \$!=\"$!\"" if defined($!) && ($! ne '');
+    $msg .= " \$@=\"$@\"" if defined($@) && ($@ ne '');
+    return $msg;
 }
 
 1;

@@ -88,7 +88,7 @@ sub _load_config {
 
     $self->_set_composite_name($conf->get('/config/collection/@composite-name')->[0]);
 
-    $self->_set_workers($conf->get('/config/@workers')->[0]);
+    $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 
 }
 
@@ -97,16 +97,28 @@ sub _create_workers {
 
     my $forker = Parallel::ForkManager->new($self->workers);
 
+    my %hosts_by_worker;
+    my $idx = 0;
+
+    foreach my $host (@{$self->hosts}) {
+	push(@{$hosts_by_worker{$idx}}, $host);
+	$idx++;
+	if ($idx >= $self->workers) {
+	    $idx = 0;
+	}
+    }
+
     for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
 	$forker->start() and next;
 	
-	my $worker = GRNOC::OESS::Collector::Worker->new( logger => $self->logger,
-							  composite_name => $self->composite_name,
-							  hosts => $self->hosts,
-							  simp_config => $self->simp_config,
-							  tsds_config => $self->tsds_config,
-							  interval => $self->interval,
-							  workers => $self->workers
+	my $worker = GRNOC::OESS::Collector::Worker->new( 
+	    worker_name => $self->composite_name . $worker_id,
+	    logger => $self->logger,
+	    composite_name => $self->composite_name,
+	    hosts => $hosts_by_worker{$worker_id},
+	    simp_config => $self->simp_config,
+	    tsds_config => $self->tsds_config,
+	    interval => $self->interval,
 	    );
 
 	$worker->run();
