@@ -8,6 +8,8 @@ use AnyEvent;
 use Data::Dumper;
 
 use GRNOC::RabbitMQ::Client;
+use GRNOC::RabbitMQ::Dispatcher;
+use GRNOC::RabbitMQ::Method;
 use GRNOC::OESS::Collector::TSDSPusher;
 
 has worker_name => (is => 'ro',
@@ -36,6 +38,7 @@ has tsds_pusher => (is => 'rwp');
 has poll_w => (is => 'rwp');
 has push_w => (is => 'rwp');
 has msg_list => (is => 'rwp', default => sub { [] });
+has cv => (is => 'rwp');
 
 sub run {
     my ($self) = @_;
@@ -45,11 +48,31 @@ sub run {
 
     $self->_load_config();
 
-    AnyEvent->condvar()->wait();
+    $self->_set_cv(AnyEvent->condvar());
+    $self->cv->recv;
 }
 
 sub _load_config {
     my ($self) = @_;
+    $self->logger->info("in " . $self->worker_name);
+
+    my $dispatcher = GRNOC::RabbitMQ::Dispatcher->new(
+	host => $self->simp_config->{'host'},
+	port => $self->simp_config->{'port'},
+	user => $self->simp_config->{'user'},
+	pass => $self->simp_config->{'password'},
+	exchange => 'SNAPP',
+	topic => "SNAPP." . $self->worker_name
+	);
+
+    my $stop_method = GRNOC::RabbitMQ::Method->new(
+	name => "stop",
+	description => "stops worker",
+	callback => sub {
+	    $self->cv->send();
+	});
+
+    $dispatcher->register_method($stop_method);
 
     $self->_set_simp_client(GRNOC::RabbitMQ::Client->new(
 				host => $self->simp_config->{'host'},

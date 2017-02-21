@@ -42,7 +42,7 @@ sub push {
 
     if (scalar @$msg_list > 0) {
 	my @msgs = splice(@$msg_list, 0, MAX_TSDS_MESSAGES);
-	$self->logger->debug($self->worker_name . " Pushing " . scalar @msgs . " messages to TSDS");
+	$self->logger->info($self->worker_name . " Pushing " . scalar @msgs . " messages to TSDS");
 	my $res = $self->tsds_svc->add_data(
 	    data => encode_json(\@msgs)
 	    );
@@ -51,7 +51,7 @@ sub push {
 	}
 	return 1;
     }
-    $self->logger->debug($self->worker_name . " Nothing to push to TSDS");
+    $self->logger->info($self->worker_name . " Nothing to push to TSDS");
     return;
 }
 

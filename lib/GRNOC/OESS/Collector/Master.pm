@@ -24,6 +24,9 @@ has hosts => (is => 'rwp', default => sub { [] });
 has interval => (is => 'rwp');
 has composite_name => (is => 'rwp');
 has workers => (is => 'rwp');
+has worker_clients => (is => 'rwp',
+		       default => sub { [] });
+
 
 sub BUILD {
     my $self = shift;
@@ -41,11 +44,17 @@ sub start {
 
     $SIG{'TERM'} = sub {
 	$self->logger->info('Received SIGTERM.');
-	$self->stop();
+	foreach my $client (@{$self->worker_clients}) {
+	    my $res = $client->stop();
+	}
     };
 
     $SIG{'HUP'} = sub {
 	$self->logger->info('Received SIGHUP.');
+	foreach my $client (@{$self->worker_clients}) {
+	    my $res = $client->stop();
+	}
+	$self->_load_config();
     };
 
     if ($self->daemonize) {
@@ -111,8 +120,10 @@ sub _create_workers {
     for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
 	$forker->start() and next;
 	
+	my $worker_name = $self->composite_name . $worker_id;
+	$self->logger->info("Creating $worker_name");
 	my $worker = GRNOC::OESS::Collector::Worker->new( 
-	    worker_name => $self->composite_name . $worker_id,
+	    worker_name => $worker_name,
 	    logger => $self->logger,
 	    composite_name => $self->composite_name,
 	    hosts => $hosts_by_worker{$worker_id},
@@ -125,6 +136,21 @@ sub _create_workers {
     
 	$forker->finish();
     }
+
+    my @clients;
+    for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
+	my $client = GRNOC::RabbitMQ::Client->new(
+	    host => $self->simp_config->{'host'},
+	    port => $self->simp_config->{'port'},
+	    user => $self->simp_config->{'user'},
+	    pass => $self->simp_config->{'password'},
+	    exchange => 'SNAPP',
+	    topic => "SNAPP." . $self->composite_name . $worker_id
+	    );
+
+	push(@clients, $client);
+    }
+    $self->_set_worker_clients(\@clients);
 
     $forker->wait_all_children();
 }
