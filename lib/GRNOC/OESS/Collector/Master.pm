@@ -26,7 +26,7 @@ has composite_name => (is => 'rwp');
 has workers => (is => 'rwp');
 has worker_clients => (is => 'rwp',
 		       default => sub { [] });
-
+has hup => (is => 'rwp', default => 0);
 
 sub BUILD {
     my $self = shift;
@@ -49,12 +49,19 @@ sub start {
 	}
     };
 
+    $SIG{'INT'} = sub {
+	$self->logger->info('Received SIGTERM.');
+	foreach my $client (@{$self->worker_clients}) {
+	    $client->stop();
+	}
+    };
+
     $SIG{'HUP'} = sub {
 	$self->logger->info('Received SIGHUP.');
 	foreach my $client (@{$self->worker_clients}) {
-	    my $res = $client->stop();
+	    $client->stop();
 	}
-	$self->_load_config();
+#	$self->_set_hup(1);
     };
 
     if ($self->daemonize) {
@@ -70,15 +77,17 @@ sub start {
 	}
     }
 
-    $self->_load_config();
-
-    $self->_create_workers();
+    while (1) {
+	$self->_load_config();
+	$self->_create_workers();
+	last unless $self->hup;
+    }
 }
 
 sub _load_config {
     my ($self) = @_;
 
-    $self->logger->info("Reading configuration from $self->config_file");
+    $self->logger->info("Reading configuration from " . $self->config_file);
 
     my $conf = GRNOC::Config->new(config_file => $self->config_file,
 				       force_array => 1);
@@ -99,6 +108,9 @@ sub _load_config {
 
     $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 
+    $self->_set_worker_clients([]);
+
+    $self->_set_hup(0);
 }
 
 sub _create_workers {
@@ -153,6 +165,7 @@ sub _create_workers {
     $self->_set_worker_clients(\@clients);
 
     $forker->wait_all_children();
+    $self->logger->info("All children are dead, terminating");
 }
     
 1;

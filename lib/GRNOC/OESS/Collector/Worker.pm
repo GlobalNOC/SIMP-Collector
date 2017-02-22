@@ -39,6 +39,7 @@ has poll_w => (is => 'rwp');
 has push_w => (is => 'rwp');
 has msg_list => (is => 'rwp', default => sub { [] });
 has cv => (is => 'rwp');
+has stop_me => (is => 'rwp', default => 0);
 
 sub run {
     my ($self) = @_;
@@ -69,7 +70,7 @@ sub _load_config {
 	name => "stop",
 	description => "stops worker",
 	callback => sub {
-	    $self->cv->send();
+	    $self->_set_stop_me(1);
 	});
 
     $dispatcher->register_method($stop_method);
@@ -164,6 +165,7 @@ sub _push_data {
     my $msg_list = $self->msg_list;
     my $res = $self->tsds_pusher->push($msg_list);
     unless ($res) {
+	$self->cv->send() if $self->stop_me;
 	$self->_set_push_w(undef);
     }
 }
