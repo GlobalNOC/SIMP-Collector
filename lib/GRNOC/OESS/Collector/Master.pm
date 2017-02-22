@@ -82,6 +82,8 @@ sub start {
 	$self->_create_workers();
 	last unless $self->hup;
     }
+
+    $self->logger->info("Master terminating");
 }
 
 sub _load_config {
@@ -151,13 +153,15 @@ sub _create_workers {
 
     my @clients;
     for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
+	my $worker_name = $self->composite_name . $worker_id;	
+	$self->logger->info("Creating Rabbit client for $worker_name");
 	my $client = GRNOC::RabbitMQ::Client->new(
 	    host => $self->simp_config->{'host'},
 	    port => $self->simp_config->{'port'},
 	    user => $self->simp_config->{'user'},
 	    pass => $self->simp_config->{'password'},
 	    exchange => 'SNAPP',
-	    topic => "SNAPP." . $self->composite_name . $worker_id
+	    topic => "SNAPP." . $worker_name
 	    );
 
 	push(@clients, $client);
@@ -165,7 +169,7 @@ sub _create_workers {
     $self->_set_worker_clients(\@clients);
 
     $forker->wait_all_children();
-    $self->logger->info("All children are dead, terminating");
+    $self->logger->info("All children are dead");
 }
     
 1;

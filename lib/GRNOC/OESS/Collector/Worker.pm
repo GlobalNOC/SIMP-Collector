@@ -49,13 +49,16 @@ sub run {
 
     $self->_load_config();
 
+    $self->logger->info("Entering event loop");
     $self->_set_cv(AnyEvent->condvar());
     $self->cv->recv;
+
+    $self->logger->info($self->worker_name . " loop ended, terminating");
 }
 
 sub _load_config {
     my ($self) = @_;
-    $self->logger->info("in " . $self->worker_name);
+    $self->logger->info($self->worker_name . " starting");
 
     my $dispatcher = GRNOC::RabbitMQ::Dispatcher->new(
 	host => $self->simp_config->{'host'},
