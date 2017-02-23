@@ -26,6 +26,7 @@ has tsds_svc => (is => 'rwp');
 sub BUILD {
     my ($self) = @_;
 
+    # Set up our TSDS webservice object when construcuted
     $self->_set_tsds_svc(GRNOC::WebService::Client->new(
 			     url => $self->tsds_config->{'url'},
 			     urn => $self->tsds_config->{'urn'},
@@ -40,6 +41,7 @@ sub BUILD {
 sub push {
     my ($self, $msg_list) = @_;
 
+    # Push messages to TSDS in MAX_TSDS_MESSAGES chunks
     if (scalar @$msg_list > 0) {
 	my @msgs = splice(@$msg_list, 0, MAX_TSDS_MESSAGES);
 	$self->logger->info($self->worker_name . " Pushing " . scalar @msgs . " messages to TSDS");
