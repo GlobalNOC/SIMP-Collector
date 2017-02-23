@@ -1,4 +1,5 @@
 # oess-vlan-collector
 
-## Work in progress
+## Ready for 1.0
+
 
