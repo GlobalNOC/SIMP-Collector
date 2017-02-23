@@ -24,8 +24,7 @@ has hosts => (is => 'rwp', default => sub { [] });
 has interval => (is => 'rwp');
 has composite_name => (is => 'rwp');
 has workers => (is => 'rwp');
-has worker_clients => (is => 'rwp',
-		       default => sub { [] });
+has worker_client => (is => 'rwp');
 has hup => (is => 'rwp', default => 0);
 
 sub BUILD {
@@ -36,34 +35,53 @@ sub BUILD {
     return $self;
 }
 
+#
+# Start up the master
+#
 sub start {
     my ($self) = @_;
     
     $self->logger->info('Starting.');
     $self->logger->debug('Setting up signal handlers.');
 
+    #
+    # Defining signal handlers
+    #
+
     $SIG{'TERM'} = sub {
 	$self->logger->info('Received SIGTERM.');
-	foreach my $client (@{$self->worker_clients}) {
-	    my $res = $client->stop();
+	# Kill workers
+	for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
+	    my $topic = "SNAPP." . $self->composite_name . $worker_id;
+	    $self->worker_client->{'topic'} = $topic;
+	    $self->worker_client->stop();
 	}
     };
 
     $SIG{'INT'} = sub {
 	$self->logger->info('Received SIGTERM.');
-	foreach my $client (@{$self->worker_clients}) {
-	    $client->stop();
+	# Kill workers
+	for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
+	    my $topic = "SNAPP." . $self->composite_name . $worker_id;
+	    $self->worker_client->{'topic'} = $topic;
+	    $self->worker_client->stop();
 	}
     };
 
     $SIG{'HUP'} = sub {
 	$self->logger->info('Received SIGHUP.');
-	foreach my $client (@{$self->worker_clients}) {
-	    $client->stop();
+	# Kill workers
+	for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
+	    my $topic = "SNAPP." . $self->composite_name . $worker_id;
+	    $self->worker_client->{'topic'} = $topic;
+	    my $res = $self->worker_client->stop();
+	    $self->logger->info(Dumper($res));
 	}
+# This is broken, reload only works once so disabling for now
 #	$self->_set_hup(1);
     };
 
+    # Daemonize if needed
     if ($self->daemonize) {
 	$self->logger->debug('Daemonizing.');
 
@@ -77,6 +95,7 @@ sub start {
 	}
     }
 
+    # Only run once unless HUP gets set, then reload and go again
     while (1) {
 	$self->_load_config();
 	$self->_create_workers();
@@ -86,6 +105,9 @@ sub start {
     $self->logger->info("Master terminating");
 }
 
+#
+# Load config and set up Master object
+#
 sub _load_config {
     my ($self) = @_;
 
@@ -110,11 +132,14 @@ sub _load_config {
 
     $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 
-    $self->_set_worker_clients([]);
+    $self->_set_worker_client(undef);
 
     $self->_set_hup(0);
 }
 
+#
+# Create Worker objects
+#
 sub _create_workers {
     my ($self) = @_;
 
@@ -123,6 +148,7 @@ sub _create_workers {
     my %hosts_by_worker;
     my $idx = 0;
 
+    # Divide up hosts in config among number of workers defined in config
     foreach my $host (@{$self->hosts}) {
 	push(@{$hosts_by_worker{$idx}}, $host);
 	$idx++;
@@ -131,6 +157,7 @@ sub _create_workers {
 	}
     }
 
+    # Spawn workers
     for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
 	$forker->start() and next;
 	
@@ -151,23 +178,18 @@ sub _create_workers {
 	$forker->finish();
     }
 
-    my @clients;
-    for (my $worker_id=0; $worker_id<$self->workers; $worker_id++) {
-	my $worker_name = $self->composite_name . $worker_id;	
-	$self->logger->info("Creating Rabbit client for $worker_name");
-	my $client = GRNOC::RabbitMQ::Client->new(
-	    host => $self->simp_config->{'host'},
-	    port => $self->simp_config->{'port'},
-	    user => $self->simp_config->{'user'},
-	    pass => $self->simp_config->{'password'},
-	    exchange => 'SNAPP',
-	    topic => "SNAPP." . $worker_name
-	    );
+    # Create RabbitMQ client for signaling workers
+    $self->logger->info("Creating Rabbit client for signaling workers");
+    $self->_set_worker_client(GRNOC::RabbitMQ::Client->new(
+				   host => $self->simp_config->{'host'},
+				   port => $self->simp_config->{'port'},
+				   user => $self->simp_config->{'user'},
+				   pass => $self->simp_config->{'password'},
+				   exchange => 'SNAPP',
+				   topic => "SNAPP." . $self->composite_name . "0"
+			      ));
 
-	push(@clients, $client);
-    }
-    $self->_set_worker_clients(\@clients);
-
+    # Wait on workers until they are killed
     $forker->wait_all_children();
     $self->logger->info("All children are dead");
 }
