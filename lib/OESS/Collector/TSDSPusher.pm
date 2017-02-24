@@ -1,4 +1,4 @@
-package GRNOC::OESS::Collector::TSDSPusher;
+package OESS::Collector::TSDSPusher;
 
 use strict;
 use warnings;

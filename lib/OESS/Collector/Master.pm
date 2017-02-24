@@ -1,4 +1,4 @@
-package GRNOC::OESS::Collector::Master;
+package OESS::Collector::Master;
 
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Data::Dumper;
 
 use GRNOC::Config;
 use GRNOC::RabbitMQ::Client;
-use GRNOC::OESS::Collector::Worker;
+use OESS::Collector::Worker;
 
 has config_file => (is => 'ro', isa => Str, required => 1);
 has pidfile => (is => 'ro', isa => Str, required => 1);
@@ -163,7 +163,7 @@ sub _create_workers {
 	
 	my $worker_name = $self->composite_name . $worker_id;
 	$self->logger->info("Creating $worker_name");
-	my $worker = GRNOC::OESS::Collector::Worker->new( 
+	my $worker = OESS::Collector::Worker->new( 
 	    worker_name => $worker_name,
 	    logger => $self->logger,
 	    composite_name => $self->composite_name,

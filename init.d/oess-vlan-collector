@@ -9,10 +9,10 @@
 . /etc/rc.d/init.d/functions
 
 name="oess-vlan-collector"
-exec="/usr/bin/oess-vlan-collector"
+exec="/usr/sbin/oess-vlan-collector"
 pidfile="/var/run/oess-vlan-collector.pid"
-CONFIG="/etc/grnoc/oess-vlan-collector/config.xml"
-LOGGING="/etc/grnoc/oess-vlan-collector/logging.conf"
+CONFIG="/etc/oess/oess-vlan-collector/config.xml"
+LOGGING="/etc/oess/oess-vlan-collector/logging.conf"
 
 start() {
     [ -f $CONFIG ] || exit 6

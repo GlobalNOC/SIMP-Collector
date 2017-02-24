@@ -1,4 +1,4 @@
-package GRNOC::OESS::Collector::Worker;
+package OESS::Collector::Worker;
 
 use strict;
 use warnings;
@@ -10,7 +10,7 @@ use Data::Dumper;
 use GRNOC::RabbitMQ::Client;
 use GRNOC::RabbitMQ::Dispatcher;
 use GRNOC::RabbitMQ::Method;
-use GRNOC::OESS::Collector::TSDSPusher;
+use OESS::Collector::TSDSPusher;
 
 has worker_name => (is => 'ro',
 		    required => 1);
@@ -100,7 +100,7 @@ sub _load_config {
 			    ));
 
     # Create TSDS Pusher object
-    $self->_set_tsds_pusher(GRNOC::OESS::Collector::TSDSPusher->new(
+    $self->_set_tsds_pusher(OESS::Collector::TSDSPusher->new(
 				logger => $self->logger,
 				worker_name => $self->worker_name,
     				tsds_config => $self->tsds_config,
