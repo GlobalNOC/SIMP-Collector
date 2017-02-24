@@ -10,7 +10,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:noarch
 
 BuildRequires: perl
-Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), perl(Types::Standard), perl(JSON::XS), perl(Proc::Daemon, perl(GRNOC::Config), perl(GRNOC::WebService::Client), perl(GRNOC::RabbitMQ::Client), perl(GRNOC::Log), perl(Parallel::ForkManager)
+Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), perl(Types::Standard), perl(JSON::XS), perl(Proc::Daemon), perl(GRNOC::Config), perl(GRNOC::WebService::Client), perl(GRNOC::RabbitMQ::Client), perl(GRNOC::Log), perl(Parallel::ForkManager)
 
 %define execdir /usr/sbin
 %define configdir /etc/oess/oess-vlan-collector
@@ -35,12 +35,14 @@ make pure_install
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{perl_vendorlib}/OESS/Collector
 %__install bin/oess-vlan-collector $RPM_BUILD_ROOT/%{execdir}/
 %__install conf/config.xml.example $RPM_BUILD_ROOT/%{configdir}/
-%__install conf/logging.xml.example $RPM_BUILD_ROOT/%{configdir}/
+%__install conf/logging.conf.example $RPM_BUILD_ROOT/%{configdir}/
 %__install init.d/oess-vlan-collector $RPM_BUILD_ROOT/%{initdir}/
 %__install lib/OESS/Collector.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/
 %__install lib/OESS/Collector/Master.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
 %__install lib/OESS/Collector/Worker.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
 %__install lib/OESS/Collector/TSDSPusher.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
+# clean up buildroot
+find %{buildroot} -name .packlist -exec %{__rm} {} \;
 
 %{_fixperms} $RPM_BUILD_ROOT/*
 
@@ -57,7 +59,7 @@ rm -rf $RPM_BUILD_ROOT
 %{perl_vendorlib}/OESS/Collector/Worker.pm
 %{perl_vendorlib}/OESS/Collector/TSDSPusher.pm
 %config(noreplace) %{configdir}/config.xml.example
-%config(noreplace) %{configdir}/config.xml.example
+%config(noreplace) %{configdir}/logging.conf.example
 
 %changelog
 * Fri Feb 24 2017 CJ Kloote <ckloote@globalnoc.iu.edu> - OESS VLAN Collector
