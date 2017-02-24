@@ -1,0 +1,14 @@
+bin/oess-vlan-collector
+conf/config.xml
+conf/config.xml.example
+conf/logging.conf
+conf/logging.conf.example
+init.d/oess-vlan-collector
+lib/OESS/Collector.pm
+lib/OESS/Collector/Master.pm
+lib/OESS/Collector/TSDSPusher.pm
+lib/OESS/Collector/Worker.pm
+Makefile.PL
+MANIFEST			This list of files
+oess-vlan-collector.spec
+README.md

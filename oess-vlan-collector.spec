@@ -23,9 +23,12 @@ This program pulls SNMP network interface rate data from Simp and publishes to T
 %setup -q
 
 %build
+%{__perl} Makefile.PL PREFIX="%{buildroot}%{_prefix}" INSTALLDIRS="vendor"
+make
 
 %install
 rm -rf $RPM_BUILD_ROOT
+make pure_install
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{execdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{configdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{initdir}
