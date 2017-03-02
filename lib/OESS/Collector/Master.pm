@@ -127,8 +127,16 @@ sub _load_config {
     $self->_set_hosts(\@hosts);
 
     $self->_set_interval($conf->get('/config/collection/@interval')->[0]);
+    if (!defined($self->interval)) {
+	$self->logger->error("Interval not defined! Exiting");
+	die;
+    }
 
     $self->_set_composite_name($conf->get('/config/collection/@composite-name')->[0]);
+    if (!defined($self->composite_name)) {
+	$self->logger-error("Composite not defined! Exiting");
+	die;
+    }
 
     $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 

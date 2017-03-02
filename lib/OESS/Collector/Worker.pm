@@ -106,13 +106,11 @@ sub _load_config {
     				tsds_config => $self->tsds_config,
     			    ));
 
-    # set interval - default to 60
+    # set interval
     my $interval = $self->interval;
-    $interval = 60 if !defined($interval);
 
-    # set composite name, default to "interfaces" 
+    # set composite name
     my $composite = $self->composite_name;
-    $composite = "interfaces" if !defined($composite);
 
     # Create polling timer for event loop
     $self->_set_poll_w(AnyEvent->timer(after => 5, interval => $interval, cb => sub {
