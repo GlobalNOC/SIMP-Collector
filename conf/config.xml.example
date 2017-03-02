@@ -1,10 +1,27 @@
 <config>
+  <!-- Defines how to connect to RabbitMQ for Simp/Comp as well as collector Master/Worker IPC -->
   <simp host='127.0.0.1' port='5672'
 	    user='guest' password='guest' />
+
+  <!-- Defines how to connect to TSDS for publishing metrics -->
   <tsds url='https://localhost/path/to/api'
 	user='username' password='password' />
+
+  <!-- 
+    Collection details:
+    interval: Polling interval - how frequently we will ask for data from Comp
+    composite-name: Composite name from Comp we are interested in
+  -->
   <collection interval='60' composite-name='interfaces' />
+
+  <!--
+    Hosts information:
+    Workers: How many Workers to create
+    Host list: List of hosts to collect on
+    (Hosts will be divided up among the number of configured workers)
+  -->
   <hosts workers="1">
     <host>host.name.net</host>
+    <host>host2.name.net</host>
   </hosts>
 </config>
