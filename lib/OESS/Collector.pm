@@ -19,4 +19,20 @@ sub get_version {
     return $VERSION;
 }
 
+sub error_message {
+    my $res = shift;
+    if (!defined($res)) {
+        my $msg = ' [no response object]';
+        $msg .= " \$!='$!'" if defined($!) && ($! ne '');
+        return $msg;
+    }
+
+    my $msg = '';
+    $msg .= " error=\"$res->{'error'}\"" if defined($res->{'error'});
+    $msg .= " error_text=\"$res->{'error_text'}\"" if defined($res->{'error_text'});
+    $msg .= " \$!=\"$!\"" if defined($!) && ($! ne '');
+    $msg .= " \$@=\"$@\"" if defined($@) && ($@ ne '');
+    return $msg;
+}
+
 1;

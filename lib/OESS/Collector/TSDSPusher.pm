@@ -7,6 +7,7 @@ use Moo;
 use JSON::XS qw(encode_json);
 use Data::Dumper;
 
+use OESS::Collector;
 use GRNOC::WebService::Client;
 
 use constant MAX_TSDS_MESSAGES => 50;
@@ -49,28 +50,12 @@ sub push {
 	    data => encode_json(\@msgs)
 	    );
 	if (!defined($res) || $res->{'error'}) {
-	    $self->logger->error($self->worker_name . " Error pushing data to TSDS: " . _error_message($res));
+	    $self->logger->error($self->worker_name . " Error pushing data to TSDS: " . OESS::Collector::error_message($res));
 	}
 	return 1;
     }
     $self->logger->info($self->worker_name . " Nothing to push to TSDS");
     return;
-}
-
-sub _error_message {
-    my $res = shift;
-    if (!defined($res)) {
-        my $msg = ' [no response object]';
-        $msg .= " \$!='$!'" if defined($!) && ($! ne '');
-        return $msg;
-    }
-
-    my $msg = '';
-    $msg .= " error=\"$res->{'error'}\"" if defined($res->{'error'});
-    $msg .= " error_text=\"$res->{'error_text'}\"" if defined($res->{'error_text'});
-    $msg .= " \$!=\"$!\"" if defined($!) && ($! ne '');
-    $msg .= " \$@=\"$@\"" if defined($@) && ($@ ne '');
-    return $msg;
 }
 
 1;

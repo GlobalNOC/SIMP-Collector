@@ -10,6 +10,7 @@ use Data::Dumper;
 use GRNOC::RabbitMQ::Client;
 use GRNOC::RabbitMQ::Dispatcher;
 use GRNOC::RabbitMQ::Method;
+use OESS::Collector;
 use OESS::Collector::TSDSPusher;
 
 has worker_name => (is => 'ro',
@@ -144,7 +145,7 @@ sub _process_host {
 
     # Drop out if we get an error from Comp
     if (!defined($res) || $res->{'error'}) {
-	$self->logger->error($self->worker_id . " Comp error: " . _error_message($res));
+	$self->logger->error($self->worker_id . " Comp error: " . OESS::Collector::error_message($res));
 	return;
     }
 
@@ -200,25 +201,6 @@ sub _push_data {
 	# Otherwise clear push timer
 	$self->_set_push_w(undef);
     }
-}
-
-#
-# parse error messages
-#
-sub _error_message {
-    my $res = shift;
-    if (!defined($res)) {
-        my $msg = ' [no response object]';
-        $msg .= " \$!='$!'" if defined($!) && ($! ne '');
-        return $msg;
-    }
-
-    my $msg = '';
-    $msg .= " error=\"$res->{'error'}\"" if defined($res->{'error'});
-    $msg .= " error_text=\"$res->{'error_text'}\"" if defined($res->{'error_text'});
-    $msg .= " \$!=\"$!\"" if defined($!) && ($! ne '');
-    $msg .= " \$@=\"$@\"" if defined($@) && ($@ ne '');
-    return $msg;
 }
 
 1;
