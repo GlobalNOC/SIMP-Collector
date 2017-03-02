@@ -134,7 +134,7 @@ sub _load_config {
 
     $self->_set_composite_name($conf->get('/config/collection/@composite-name')->[0]);
     if (!defined($self->composite_name)) {
-	$self->logger-error("Composite not defined! Exiting");
+	$self->logger->error("Composite not defined! Exiting");
 	die;
     }
 
