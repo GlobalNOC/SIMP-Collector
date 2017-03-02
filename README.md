@@ -1,5 +1,4 @@
-# oess-vlan-collector
+## OESS VLAN Collector 1.0.0. -- Fri Feb 24 2017
 
-## Ready for 1.0
-
-
+### Features:
+    * Initial release of OESS VLAN Collector
