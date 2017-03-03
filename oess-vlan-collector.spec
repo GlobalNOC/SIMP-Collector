@@ -15,9 +15,14 @@ Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), per
 %define execdir /usr/sbin
 %define configdir /etc/oess/oess-vlan-collector
 %define initdir /etc/rc.d/init.d
+%define sysconfdir /etc/sysconfig
 
 %description
 This program pulls SNMP network interface rate data from Simp and publishes to TSDS.
+
+%pre
+/usr/bin/getent group oess-collector > /dev/null || /usr/sbin/groupadd -r oess-collector
+/usr/bin/getent passwd oess-collector > /dev/null || /usr/sbin/useradd -r -s /sbin/nologin -g oess-collector oess-collector
 
 %prep
 %setup -q
@@ -32,10 +37,12 @@ make pure_install
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{execdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{configdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{initdir}
+%__mkdir -p -m 0775 $RPM_BUILD_ROOT%{sysconfdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{perl_vendorlib}/OESS/Collector
 %__install bin/oess-vlan-collector $RPM_BUILD_ROOT/%{execdir}/
-%__install conf/config.xml.example $RPM_BUILD_ROOT/%{configdir}/
-%__install conf/logging.conf.example $RPM_BUILD_ROOT/%{configdir}/
+%__install conf/config.xml.example $RPM_BUILD_ROOT/%{configdir}/config.xml
+%__install conf/logging.conf.example $RPM_BUILD_ROOT/%{configdir}/logging.conf
+%__install conf/sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/oess-vlan-collector
 %__install init.d/oess-vlan-collector $RPM_BUILD_ROOT/%{initdir}/
 %__install lib/OESS/Collector.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/
 %__install lib/OESS/Collector/Master.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
@@ -58,8 +65,9 @@ rm -rf $RPM_BUILD_ROOT
 %{perl_vendorlib}/OESS/Collector/Master.pm
 %{perl_vendorlib}/OESS/Collector/Worker.pm
 %{perl_vendorlib}/OESS/Collector/TSDSPusher.pm
-%config(noreplace) %{configdir}/config.xml.example
-%config(noreplace) %{configdir}/logging.conf.example
+%config(noreplace) %{configdir}/config.xml
+%config(noreplace) %{configdir}/logging.conf
+%config(noreplace) %{sysconfdir}/oess-vlan-collector
 
 %changelog
 * Fri Feb 24 2017 CJ Kloote <ckloote@globalnoc.iu.edu> - OESS VLAN Collector

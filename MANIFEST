@@ -3,6 +3,8 @@ conf/config.xml
 conf/config.xml.example
 conf/logging.conf
 conf/logging.conf.example
+conf/oess-vlan-collector.service
+conf/sysconfig
 init.d/oess-vlan-collector
 lib/OESS/Collector.pm
 lib/OESS/Collector/Master.pm

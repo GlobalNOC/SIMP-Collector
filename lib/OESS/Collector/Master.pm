@@ -7,6 +7,7 @@ use Moo;
 use Types::Standard qw(Str Bool);
 use Proc::Daemon;
 use Parallel::ForkManager;
+use POSIX qw(setuid setgid);
 use Data::Dumper; 
 
 use GRNOC::Config;
@@ -16,6 +17,8 @@ use OESS::Collector::Worker;
 has config_file => (is => 'ro', isa => Str, required => 1);
 has pidfile => (is => 'ro', isa => Str, required => 1);
 has daemonize => (is => 'ro', isa => Bool, required => 1);
+has run_user => (is => 'ro', required => 0);
+has run_group => (is => 'ro', required => 0);
 
 has logger => (is => 'rwp');
 has simp_config => (is => 'rwp');
@@ -75,7 +78,6 @@ sub start {
 	    my $topic = "SNAPP." . $self->composite_name . $worker_id;
 	    $self->worker_client->{'topic'} = $topic;
 	    my $res = $self->worker_client->stop();
-	    $self->logger->info(Dumper($res));
 	}
 # This is broken, reload only works once so disabling for now
 #	$self->_set_hup(1);
@@ -93,6 +95,25 @@ sub start {
 	    die 'Spawning child process failed' if !$daemon->Status();
 	    exit(0);
 	}
+    }
+
+    # If requested, change to different user and group
+    if (defined($self->run_group)) {
+	my $run_group = $self->run_group;
+	my $gid = getpwnam($self->run_group);
+	die "Unable to get GID for group '$run_group'\n" if !defined($gid);
+	$! = 0;
+	setgid($gid);
+	die "Unable to set GID to '$run_group' ($gid): $!\n" if $! != 0;
+    }
+
+    if (defined($self->run_user)) {
+	my $run_user = $self->run_user;
+	my $uid = getpwnam($run_user);
+	die "Unable to get UID for user '$run_user'\n" if !defined($uid);
+	$! = 0;
+	setuid($uid);
+	die "Unable to set UID to '$run_user' ($uid): $!\n" if $! != 0;
     }
 
     # Only run once unless HUP gets set, then reload and go again

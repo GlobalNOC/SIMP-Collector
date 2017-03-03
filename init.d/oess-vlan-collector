@@ -13,12 +13,16 @@ exec="/usr/sbin/oess-vlan-collector"
 pidfile="/var/run/oess-vlan-collector.pid"
 CONFIG="/etc/oess/oess-vlan-collector/config.xml"
 LOGGING="/etc/oess/oess-vlan-collector/logging.conf"
+OTHER_ARGS='--user oess-collector --group oess-collector'
+
+# Variable overrides
+. /etc/sysconfig/oess-vlan-collector
 
 start() {
     [ -f $CONFIG ] || exit 6
     [ -x $exec ] || exit 5
     echo -n $"Starting $name: "
-    daemon "$exec --config $CONFIG --logging $LOGGING"
+    daemon $exec --config $CONFIG --logging $LOGGING --pidfile $pidfile $OTHER_ARGS
     retval=$?
     echo
     return $retval

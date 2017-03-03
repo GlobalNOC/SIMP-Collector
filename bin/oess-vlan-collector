@@ -16,12 +16,16 @@ my $conf_file = '/etc/oess/oess-vlan-collector/config.xml';
 my $logging_file = '/etc/oess/oess-vlan-collector/logging.conf';
 my $pidfile = '/var/run/oess-vlan-collector.pid';
 my $nofork = 0;
+my $run_group;
+my $run_user;
 my $help;
 
 GetOptions( 'config=s' => \$conf_file,
 	    'logging=s' => \$logging_file,
 	    'pidfile=s' => \$pidfile,
 	    'nofork' => \$nofork,
+	    'group=s' => \$run_group,
+	    'user=s' => \$run_user,
 	    'help|h|?' => \$help,
     );
 
@@ -32,13 +36,16 @@ my $grnoc_log = GRNOC::Log->new(config => $logging_file);
 my $collector = OESS::Collector::Master->new(
     config_file => $conf_file,
     pidfile => $pidfile,
-    daemonize => !$nofork
+    daemonize => !$nofork,
+    run_user => $run_user,
+    run_group => $run_group
     );
 
 $collector->start();
 
 sub usage {
     print "$0 [--config <config_file>] [--logging <logging_file>] [--pidfile pidfile]\n";
+    print "\t[--group <group>] [--user <user>]\n";
     print "\t--nofork - Do not daemonize\n";
     exit(1);
 }
