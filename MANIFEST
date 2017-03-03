@@ -15,3 +15,6 @@ MANIFEST			This list of files
 oess-vlan-collector-1.0.0.tar.gz
 oess-vlan-collector.spec
 README.md
+t/00-load.t
+t/01-pod.t
+t/02-pod_coverage.t
