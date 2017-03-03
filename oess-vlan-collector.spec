@@ -1,7 +1,7 @@
 Summary: OESS VLAN Collector
 Name: oess-vlan-collector
 Version: 1.1.0
-Release: 1
+Release: 2
 License: APL 2.0
 Group: Network
 URL: http://globalnoc.iu.edu
@@ -44,7 +44,7 @@ make pure_install
 %__install conf/logging.conf.example $RPM_BUILD_ROOT/%{configdir}/logging.conf
 %if 0%{?rhel} == 7
 %__install -d -p %{buildroot}/etc/systemd/system/
-%__install systemd/system/oess-vlan-collector.service $RPM_BUILD_ROOT/etc/systemd/system/oess-vlan-collector.service
+%__install conf/oess-vlan-collector.service $RPM_BUILD_ROOT/etc/systemd/system/oess-vlan-collector.service
 %else
 %__install conf/sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/oess-vlan-collector
 %__install init.d/oess-vlan-collector $RPM_BUILD_ROOT/%{initdir}/
