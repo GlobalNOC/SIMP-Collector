@@ -1,0 +1,11 @@
+[Unit]
+Description=OESS VLAN Collector
+After=syslog.target network.target
+
+[Service]
+ExecStart=/usr/sbin/oess-vlan-collector --config /etc/oess/oess-vlan-collector.xml --logging /etc/oess/oess-vlan-collector/logging.conf --pidfile /var/run/oess-vlan-collector.pid --user oess-collector --group oess-collector
+Type=forking
+PIDFile=/var/run/oess-vlan-collector.pid
+
+[Install]
+WantedBy=multi-user.target
