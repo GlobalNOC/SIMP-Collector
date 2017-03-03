@@ -1,4 +1,4 @@
-## OESS VLAN Collector 1.1.0 -- Fri Mar 3 2017
+## OESS VLAN Collector 1.0.1 -- Fri Mar 3 2017
 
 ### Features:
 * 3361:160 - Supports setting uid/gid at runtime

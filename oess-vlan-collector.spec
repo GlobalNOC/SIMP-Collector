@@ -1,7 +1,7 @@
 Summary: OESS VLAN Collector
 Name: oess-vlan-collector
-Version: 1.1.0
-Release: 2
+Version: 1.0.1
+Release: 1
 License: APL 2.0
 Group: Network
 URL: http://globalnoc.iu.edu
