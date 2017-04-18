@@ -9,7 +9,7 @@ use strict;
 use warnings;
 
 use Getopt::Long;
-use GRNOC::Log;
+use Log::Log4perl;
 use OESS::Collector::Master;
 
 my $conf_file = '/etc/oess/oess-vlan-collector/config.xml';
@@ -31,7 +31,7 @@ GetOptions( 'config=s' => \$conf_file,
 
 usage() if ($help); 
 
-my $grnoc_log = GRNOC::Log->new(config => $logging_file);
+Log::Log4perl::init($logging_file);
 
 my $collector = OESS::Collector::Master->new(
     config_file => $conf_file,

@@ -10,7 +10,7 @@ use Data::Dumper;
 use OESS::Collector;
 use GRNOC::WebService::Client;
 
-use constant MAX_TSDS_MESSAGES => 50;
+use constant MAX_TSDS_MESSAGES => 20;
 use constant SERVICE_CACHE_FILE => "/etc/grnoc/name-service-cacher/name-service.xml";
 
 has logger => (is => 'rwp',
@@ -30,12 +30,12 @@ sub BUILD {
     # Set up our TSDS webservice object when construcuted
     $self->_set_tsds_svc(GRNOC::WebService::Client->new(
 			     url => $self->tsds_config->{'url'},
-			     urn => $self->tsds_config->{'urn'},
+			     # urn => $self->tsds_config->{'urn'},
 			     uid => $self->tsds_config->{'user'},
 			     passwd => $self->tsds_config->{'password'},
-			     realm => $self->tsds_config->{'realm'},
-			     service_cache_file => SERVICE_CACHE_FILE,
-			     usePost => 1,
+			     # realm => $self->tsds_config->{'realm'},
+			     # service_cache_file => SERVICE_CACHE_FILE,
+			     usePost => 1
 			 ));
 }
 
@@ -48,7 +48,7 @@ sub push {
 	$self->logger->info($self->worker_name . " Pushing " . scalar @msgs . " messages to TSDS");
 	my $res = $self->tsds_svc->add_data(
 	    data => encode_json(\@msgs)
-	    );
+	);
 	if (!defined($res) || $res->{'error'}) {
 	    $self->logger->error($self->worker_name . " Error pushing data to TSDS: " . OESS::Collector::error_message($res));
 	}
