@@ -205,8 +205,8 @@ sub _push_data {
     my ($self) = @_;
     my $msg_list = $self->msg_list;
     my $res = $self->tsds_pusher->push($msg_list);
-    $self->logger->info( Dumper($msg_list) );
-    $self->logger->info( Dumper($res) );
+    $self->logger->debug( Dumper($msg_list) );
+    $self->logger->debug( Dumper($res) );
 
     unless ($res) {
 	# If queue is empty and stop flag is set, end event loop
