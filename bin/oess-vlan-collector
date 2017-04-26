@@ -20,14 +20,15 @@ my $run_group;
 my $run_user;
 my $help;
 
-GetOptions( 'config=s' => \$conf_file,
-	    'logging=s' => \$logging_file,
-	    'pidfile=s' => \$pidfile,
-	    'nofork' => \$nofork,
-	    'group=s' => \$run_group,
-	    'user=s' => \$run_user,
-	    'help|h|?' => \$help,
-    );
+GetOptions(
+    'config=s' => \$conf_file,
+    'logging=s' => \$logging_file,
+    'pidfile=s' => \$pidfile,
+    'nofork' => \$nofork,
+    'group=s' => \$run_group,
+    'user=s' => \$run_user,
+    'help|h|?' => \$help,
+);
 
 usage() if ($help); 
 
@@ -39,7 +40,7 @@ my $collector = OESS::Collector::Master->new(
     daemonize => !$nofork,
     run_user => $run_user,
     run_group => $run_group
-    );
+);
 
 $collector->start();
 
