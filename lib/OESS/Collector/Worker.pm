@@ -49,8 +49,7 @@ sub run {
     my ($self) = @_;
 
     # Set logging object
-    my $logger = GRNOC::Log->get_logger($self->worker_name);
-    $self->_set_logger($logger);
+    $self->_set_logger(Log::Log4perl->get_logger('OESS.Collector.Worker'));
 
     # Set worker properties
     $self->_load_config();
@@ -77,35 +76,35 @@ sub _load_config {
 	user => $self->simp_config->{'user'},
 	pass => $self->simp_config->{'password'},
 	exchange => 'SNAPP',
-	topic => "SNAPP." . $self->worker_name
-	);
+	topic    => "SNAPP." . $self->worker_name
+    );
 
     # Create and register stop method
     my $stop_method = GRNOC::RabbitMQ::Method->new(
-	name => "stop",
+	name        => "stop",
 	description => "stops worker",
 	callback => sub {
-	    # Set stop flag
 	    $self->_set_stop_me(1);
-	});
+	}
+    );
     $dispatcher->register_method($stop_method);
 
     # Create SIMP client object
     $self->_set_simp_client(GRNOC::RabbitMQ::Client->new(
-				host => $self->simp_config->{'host'},
-				port => $self->simp_config->{'port'},
-				user => $self->simp_config->{'user'},
-				pass => $self->simp_config->{'password'},
-				exchange => 'Simp',
-				topic => 'Simp.CompData'
-			    ));
+	host => $self->simp_config->{'host'},
+	port => $self->simp_config->{'port'},
+	user => $self->simp_config->{'user'},
+	pass => $self->simp_config->{'password'},
+	exchange => 'Simp',
+	topic    => 'Simp.CompData'
+    ));
 
     # Create TSDS Pusher object
     $self->_set_tsds_pusher(OESS::Collector::TSDSPusher->new(
-				logger => $self->logger,
-				worker_name => $self->worker_name,
-    				tsds_config => $self->tsds_config,
-    			    ));
+	logger => $self->logger,
+	worker_name => $self->worker_name,
+	tsds_config => $self->tsds_config,
+    ));
 
     # set interval
     my $interval = $self->interval;
@@ -114,26 +113,33 @@ sub _load_config {
     my $composite = $self->composite_name;
 
     # Create polling timer for event loop
-    $self->_set_poll_w(AnyEvent->timer(after => 5, interval => $interval, cb => sub {
-	my $tm = time;
+    $self->_set_poll_w(AnyEvent->timer(
+	after => 5,
+	interval => $interval,
+	cb => sub {
+	    my $tm = time;
 	
-	# Pull data for each host from Comp
-	foreach my $host (@{$self->hosts}) {
-	    $self->logger->info($self->worker_name . " processing $host");
-	    my $res = $self->simp_client->$composite(
-		node => $host,
-		period => $interval,
-		async_callback => sub {
-		    # Process results and push when idle
-		    my $res = shift;
-		    $self->_process_host($res, $tm);
-		    $self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
-		});
-	}
-	# Push when idle
-	$self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
-				  }));
+	    # Pull data for each host from Comp
+	    foreach my $host (@{$self->hosts}) {
+		$self->logger->info($self->worker_name . " processing $host");
 
+		$self->simp_client->$composite(
+		    node           => $host,
+		    period         => $interval,
+		    async_callback => sub {
+			my $res = shift;
+
+			# Process results and push when idle
+			$self->_process_host($res, $tm);
+			$self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
+		    });
+	    }
+
+	    # Push when idle
+	    $self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
+	}
+    ));
+    
     $self->logger->info($self->worker_name . " Done setting up event callbacks");
 }
 
@@ -145,12 +151,16 @@ sub _process_host {
 
     # Drop out if we get an error from Comp
     if (!defined($res) || $res->{'error'}) {
-	$self->logger->error($self->worker_id . " Comp error: " . OESS::Collector::error_message($res));
+	$self->logger->error($self->worker_name . " Comp error: " . OESS::Collector::error_message($res));
 	return;
     }
 
     # Take data from Comp and "package" for a post to TSDS
     foreach my $node_name (keys %{$res->{'results'}}) {
+
+	$self->logger->error("Name: " . Dumper($node_name));
+	$self->logger->error("Value: " . Dumper($res->{'results'}->{$node_name}));
+
 	my $interfaces = $res->{'results'}->{$node_name};
 	foreach my $intf_name (keys %{$interfaces}) {
 	    my $intf = $interfaces->{$intf_name};
@@ -195,11 +205,15 @@ sub _push_data {
     my ($self) = @_;
     my $msg_list = $self->msg_list;
     my $res = $self->tsds_pusher->push($msg_list);
+    $self->logger->debug( Dumper($msg_list) );
+    $self->logger->debug( Dumper($res) );
+
     unless ($res) {
 	# If queue is empty and stop flag is set, end event loop
 	$self->cv->send() if $self->stop_me;
 	# Otherwise clear push timer
 	$self->_set_push_w(undef);
+	exit(0) if $self->stop_me;
     }
 }
 
