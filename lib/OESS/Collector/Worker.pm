@@ -48,6 +48,8 @@ has stop_me => (is => 'rwp', default => 0);
 sub run {
     my ($self) = @_;
 
+    $0 = $self->worker_name;
+
     # Set logging object
     $self->_set_logger(Log::Log4perl->get_logger('OESS.Collector.Worker'));
 
