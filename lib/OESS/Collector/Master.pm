@@ -7,7 +7,7 @@ use Log::Log4perl;
 use Moo;
 use Types::Standard qw(Str Bool);
 use Proc::Daemon;
-use Parallel::ForkManager;
+use AnyEvent::Subprocess;
 use POSIX qw(setuid setgid);
 use Data::Dumper; 
 
@@ -29,11 +29,14 @@ has interval => (is => 'rwp');
 has composite_name => (is => 'rwp');
 has workers => (is => 'rwp');
 has worker_client => (is => 'rwp');
+has children => (is => 'rwp', default => sub {[]});
 has hup => (is => 'rwp', default => 0);
+
+my $running;
 
 sub BUILD {
     my $self = shift;
-
+    
     $self->_set_logger(Log::Log4perl->get_logger('OESS.Collector.Master'));
 
     return $self;
@@ -53,7 +56,9 @@ sub start {
     if ($self->daemonize) {
 	$self->logger->debug('Daemonizing.');
 
-	my $daemon = Proc::Daemon->new(pid_file => $self->pidfile);
+	my $daemon = Proc::Daemon->new( pid_file => $self->pidfile,
+				        child_STDOUT => '/tmp/oess-vlan-collector.out',
+				        child_STDERR => '/tmp/oess-vlan-collector.err');
 	my $pid = $daemon->Init();
 
 	if ($pid) {
@@ -62,6 +67,8 @@ sub start {
 	    exit(0);
 	}
     }
+
+    warn "Child is alive!!\n";
 
     # If requested, change to different user and group
     if (defined($self->run_group)) {
@@ -140,8 +147,6 @@ sub _load_config {
 sub _create_workers {
     my ($self) = @_;
 
-    my $forker = Parallel::ForkManager->new($self->workers);
-
     my %hosts_by_worker;
     my $idx = 0;
 
@@ -155,72 +160,81 @@ sub _create_workers {
     }
 
     my $worker_names = [];
-
     # Spawn workers
     for (my $worker_id = 0; $worker_id < $self->workers; $worker_id++) {
-
+	my $proc;
+	my $init_proc;
 	my $worker_name = $self->composite_name . $worker_id;
 	push(@{$worker_names}, $worker_name);
 
-	$forker->start() and next;
-	
-	$self->logger->info("Creating Collector for $worker_name");
-	my $worker = OESS::Collector::Worker->new( 
-	    worker_name => $worker_name,
-	    logger => $self->logger,
-	    composite_name => $self->composite_name,
-	    hosts => $hosts_by_worker{$worker_id},
-	    simp_config => $self->simp_config,
-	    tsds_config => $self->tsds_config,
-	    interval => $self->interval,
-	);
+	$self->_create_worker( name => $worker_name,
+			       hosts => $hosts_by_worker{$worker_id});
 
-	$worker->run();
-    
-	$forker->finish();
     }
 
-    $self->logger->info("Creating RabbitMQ client for Worker interactions.");
-    my $mq = GRNOC::RabbitMQ::Client->new(
-	host => $self->simp_config->{'host'},
-	port => $self->simp_config->{'port'},
-	user => $self->simp_config->{'user'},
-	pass => $self->simp_config->{'password'},
-	exchange => 'SNAPP',
-	topic    => 'SNAPP'
-    );
+    $running = AnyEvent->condvar;
 
     $SIG{'TERM'} = sub {
 	$self->logger->info('Received SIGTERM.');
-	foreach my $name (@{$worker_names}) {
-	    $mq->{'topic'} = 'SNAPP.' . $name;
-	    $mq->stop();
+	foreach my $worker (@{$self->children}){
+	    $worker->kill();
 	}
+	exit;
     };
 
     $SIG{'INT'} = sub {
-	$self->logger->info('Received SIGTERM.');
-	foreach my $name (@{$worker_names}) {
-	    $mq->{'topic'} = 'SNAPP.' . $name;
-	    $mq->stop();
-	}
+        $self->logger->info('Received SIGINT.');
+        foreach my $worker (@{$self->children}){
+            $worker->kill();
+        }
+        exit;
     };
 
     $SIG{'HUP'} = sub {
 	$self->logger->info('Received SIGHUP.');
-
-	# This is broken, reload only works once so disabling for now
-	# $self->_set_hup(1);
-
-	foreach my $name (@{$worker_names}) {
-	    $mq->{'topic'} = 'SNAPP.' . $name;
-	    $mq->stop();
-	}
+	while(my $worker = pop @{$self->children}){
+            $worker->kill();
+        }
+	
+	$self->_set_hup(1);	
+	$running->send;
     };
 
-    # Wait on workers until they are killed
-    $forker->wait_all_children();
-    $self->logger->info("All children are dead");
+    $running->recv;
+
 }
+
+sub _create_worker{
+    my $self = shift;
+    my %params = @_;
     
-1;
+    my $init_proc = AnyEvent::Subprocess->new( on_completion => sub {
+	$self->logger->error("Child " . $params{'name'} . " has died");
+	#do something to restart
+	#pop the worker off the queue
+	$self->_create_worker( name => $params{'name'},
+			       hosts => $params{'hosts'} );
+	
+					       },
+					       code => sub {
+						   use GRNOC::Log;
+						   use OESS::Collector::Worker;
+						   
+						   $self->logger->info("Creating Collector for " . $params{'name'});
+						   my $worker = OESS::Collector::Worker->new(
+						       worker_name => $params{'name'},
+						       logger => $self->logger,
+						       composite_name => $self->composite_name,
+						       hosts => $params{'hosts'},
+						       simp_config => $self->simp_config,
+						       tsds_config => $self->tsds_config,
+						       interval => $self->interval,
+						       );
+						   
+						   $worker->run();
+					       });
+    
+    my $proc = $init_proc->run();
+    push(@{$self->children}, $proc);
+}
+    1;
