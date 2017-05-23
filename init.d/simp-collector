@@ -8,12 +8,12 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-name="oess-vlan-collector"
-exec="/usr/sbin/oess-vlan-collector"
-pidfile="/var/run/oess-vlan-collector.pid"
-CONFIG="/etc/oess/oess-vlan-collector/config.xml"
-LOGGING="/etc/oess/oess-vlan-collector/logging.conf"
-OTHER_ARGS='--user oess-collector --group oess-collector'
+name="simp-collector"
+exec="/usr/sbin/simp-collector"
+pidfile="/var/run/simp-collector.pid"
+CONFIG="/etc/simp/collector/config.xml"
+LOGGING="/etc/simp/collector/logging.conf"
+OTHER_ARGS='--user simp-collector --group simp-collector'
 
 # Variable overrides
 . /etc/sysconfig/oess-vlan-collector
