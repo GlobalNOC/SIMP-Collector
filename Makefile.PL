@@ -4,17 +4,17 @@ use ExtUtils::MakeMaker;
 
 sub MY::postamble { << 'END';}
 rpm:    dist
-	rpmbuild -ta oess-vlan-collector-$(VERSION).tar.gz
+	rpmbuild -ta simp-collector-$(VERSION).tar.gz
 END
 
 WriteMakefile(
-    NAME                => 'oess-vlan-collector',
+    NAME                => 'simp-collector',
     AUTHOR              => 'GRNOC Systems Engineering <syseng@grnoc.iu.edu>',
-    VERSION_FROM        => 'lib/OESS/Collector.pm',
+    VERSION_FROM        => 'lib/SIMP/Collector.pm',
     PL_FILES            => {},
     PREREQ_PM => {},
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'perl-OESS-*' },
+    clean               => { FILES => 'simp-collector-*' },
     );
 
 sub MY::test

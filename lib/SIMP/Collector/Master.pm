@@ -1,4 +1,4 @@
-package OESS::Collector::Master;
+package SIMP::Collector::Master;
 
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Data::Dumper;
 
 use GRNOC::Config;
 use GRNOC::RabbitMQ::Client;
-use OESS::Collector::Worker;
+use SIMP::Collector::Worker;
 
 has config_file => (is => 'ro', isa => Str, required => 1);
 has pidfile => (is => 'ro', isa => Str, required => 1);
@@ -37,7 +37,7 @@ my $running;
 sub BUILD {
     my $self = shift;
     
-    $self->_set_logger(Log::Log4perl->get_logger('OESS.Collector.Master'));
+    $self->_set_logger(Log::Log4perl->get_logger('SIMP.Collector.Master'));
 
     return $self;
 }
@@ -218,10 +218,10 @@ sub _create_worker{
 					       },
 					       code => sub {
 						   use GRNOC::Log;
-						   use OESS::Collector::Worker;
+						   use SIMP::Collector::Worker;
 						   
 						   $self->logger->info("Creating Collector for " . $params{'name'});
-						   my $worker = OESS::Collector::Worker->new(
+						   my $worker = SIMP::Collector::Worker->new(
 						       worker_name => $params{'name'},
 						       logger => $self->logger,
 						       composite_name => $self->composite_name,

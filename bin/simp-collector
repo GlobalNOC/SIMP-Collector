@@ -10,11 +10,11 @@ use warnings;
 
 use Getopt::Long;
 use Log::Log4perl;
-use OESS::Collector::Master;
+use SIMP::Collector::Master;
 
-my $conf_file = '/etc/oess/oess-vlan-collector/config.xml';
-my $logging_file = '/etc/oess/oess-vlan-collector/logging.conf';
-my $pidfile = '/var/run/oess-vlan-collector.pid';
+my $conf_file = '/etc/simp/collector/config.xml';
+my $logging_file = '/etc/simp/collector/logging.conf';
+my $pidfile = '/var/run/simp-collector.pid';
 my $nofork = 0;
 my $run_group;
 my $run_user;
@@ -34,7 +34,7 @@ usage() if ($help);
 
 Log::Log4perl::init($logging_file);
 
- my $collector = OESS::Collector::Master->new(
+ my $collector = SIMP::Collector::Master->new(
      config_file => $conf_file,
      pidfile => $pidfile,
      daemonize => !$nofork,
@@ -42,7 +42,7 @@ Log::Log4perl::init($logging_file);
      run_group => $run_group
  );
 
-#my $collector = OESS::Collector::Creator->new(
+#my $collector = SIMP::Collector::Creator->new(
 #    config => $conf_file,
 #    pid    => $pidfile,
 #    daemon => !$nofork,

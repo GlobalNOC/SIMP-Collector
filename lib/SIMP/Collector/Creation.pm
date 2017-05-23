@@ -1,4 +1,4 @@
-package OESS::Collector::Creation;
+package SIMP::Collector::Creation;
 
 use strict;
 use warnings;
@@ -9,11 +9,11 @@ use GRNOC::RabbitMQ::Dispatcher;
 use GRNOC::RabbitMQ::Method;
 use Log::Log4perl;
 
-Log::Log4perl->init('/etc/oess/logging.conf');
-my $log = Log::Log4perl->get_logger('OESS.Collector.Creation');
+Log::Log4perl->init('/etc/simp/collector/logging.conf');
+my $log = Log::Log4perl->get_logger('SIMP.Collector.Creation');
 
 my $conf = GRNOC::Config->new(
-    config_file => '/etc/oess/oess-vlan-collector/config.xml',
+    config_file => '/etc/simp/collector/config.xml',
     force_array => 1
 );
 

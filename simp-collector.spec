@@ -1,6 +1,6 @@
-Summary: OESS VLAN Collector
-Name: oess-vlan-collector
-Version: 1.0.1
+Summary: SIMP Collector
+Name: simp-collector
+Version: 1.0.2
 Release: 1
 License: APL 2.0
 Group: Network
@@ -13,7 +13,7 @@ BuildRequires: perl
 Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), perl(Types::Standard), perl(JSON::XS), perl(Proc::Daemon), perl(GRNOC::Config), perl(GRNOC::WebService::Client), perl(GRNOC::RabbitMQ::Client), perl(GRNOC::Log), perl(Parallel::ForkManager)
 
 %define execdir /usr/sbin
-%define configdir /etc/oess/oess-vlan-collector
+%define configdir /etc/simp/collector
 %define initdir /etc/rc.d/init.d
 %define sysconfdir /etc/sysconfig
 
@@ -21,8 +21,8 @@ Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), per
 This program pulls SNMP network interface rate data from Simp and publishes to TSDS.
 
 %pre
-/usr/bin/getent group oess-collector > /dev/null || /usr/sbin/groupadd -r oess-collector
-/usr/bin/getent passwd oess-collector > /dev/null || /usr/sbin/useradd -r -s /sbin/nologin -g oess-collector oess-collector
+/usr/bin/getent group simp-collector > /dev/null || /usr/sbin/groupadd -r simp-collector
+/usr/bin/getent passwd simp-collector > /dev/null || /usr/sbin/useradd -r -s /sbin/nologin -g simp-collector simp-collector
 
 %prep
 %setup -q
@@ -38,21 +38,21 @@ make pure_install
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{configdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{initdir}
 %__mkdir -p -m 0775 $RPM_BUILD_ROOT%{sysconfdir}
-%__mkdir -p -m 0775 $RPM_BUILD_ROOT%{perl_vendorlib}/OESS/Collector
-%__install bin/oess-vlan-collector $RPM_BUILD_ROOT/%{execdir}/
+%__mkdir -p -m 0775 $RPM_BUILD_ROOT%{perl_vendorlib}/SIMP/Collector
+%__install bin/simp-collector $RPM_BUILD_ROOT/%{execdir}/
 %__install conf/config.xml.example $RPM_BUILD_ROOT/%{configdir}/config.xml
 %__install conf/logging.conf.example $RPM_BUILD_ROOT/%{configdir}/logging.conf
 %if 0%{?rhel} == 7
 %__install -d -p %{buildroot}/etc/systemd/system/
-%__install conf/oess-vlan-collector.service $RPM_BUILD_ROOT/etc/systemd/system/oess-vlan-collector.service
+%__install conf/simp-collector.service $RPM_BUILD_ROOT/etc/systemd/system/simp-collector.service
 %else
-%__install conf/sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/oess-vlan-collector
-%__install init.d/oess-vlan-collector $RPM_BUILD_ROOT/%{initdir}/
+%__install conf/sysconfig $RPM_BUILD_ROOT/%{sysconfdir}/simp-collector
+%__install init.d/simp-collector $RPM_BUILD_ROOT/%{initdir}/
 %endif
-%__install lib/OESS/Collector.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/
-%__install lib/OESS/Collector/Master.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
-%__install lib/OESS/Collector/Worker.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
-%__install lib/OESS/Collector/TSDSPusher.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/OESS/Collector/
+%__install lib/SIMP/Collector.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/SIMP/
+%__install lib/SIMP/Collector/Master.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/SIMP/Collector/
+%__install lib/SIMP/Collector/Worker.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/SIMP/Collector/
+%__install lib/SIMP/Collector/TSDSPusher.pm $RPM_BUILD_ROOT/%{perl_vendorlib}/SIMP/Collector/
 # clean up buildroot
 find %{buildroot} -name .packlist -exec %{__rm} {} \;
 
@@ -64,20 +64,21 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%attr(755,root,root) %{execdir}/oess-vlan-collector
+%attr(755,root,root) %{execdir}/simp-collector
 %if 0%{?rhel} == 7
-%attr(644,root,root) /etc/systemd/system/oess-vlan-collector.service
+%attr(644,root,root) /etc/systemd/system/simp-collector.service
 %else
-%attr(755,root,root) %config %{initdir}/oess-vlan-collector
-%config(noreplace) %{sysconfdir}/oess-vlan-collector
+%attr(755,root,root) %config %{initdir}/simp-collector
+%config(noreplace) %{sysconfdir}/simp-collector
 %endif
-%{perl_vendorlib}/OESS/Collector.pm
-%{perl_vendorlib}/OESS/Collector/Master.pm
-%{perl_vendorlib}/OESS/Collector/Worker.pm
-%{perl_vendorlib}/OESS/Collector/TSDSPusher.pm
+%{perl_vendorlib}/SIMP/Collector.pm
+%{perl_vendorlib}/SIMP/Collector/Master.pm
+%{perl_vendorlib}/SIMP/Collector/Worker.pm
+%{perl_vendorlib}/SIMP/Collector/TSDSPusher.pm
 %config(noreplace) %{configdir}/config.xml
 %config(noreplace) %{configdir}/logging.conf
 
 %changelog
+* Tue May 23 2017 AJ Ragusa <aragusa@globalnoc.iu.edu> - SIMP Collector
 * Fri Feb 24 2017 CJ Kloote <ckloote@globalnoc.iu.edu> - OESS VLAN Collector
 - Initial build.

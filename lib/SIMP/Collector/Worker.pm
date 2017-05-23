@@ -1,4 +1,4 @@
-package OESS::Collector::Worker;
+package SIMP::Collector::Worker;
 
 use strict;
 use warnings;
@@ -10,8 +10,8 @@ use Data::Dumper;
 use GRNOC::RabbitMQ::Client;
 use GRNOC::RabbitMQ::Dispatcher;
 use GRNOC::RabbitMQ::Method;
-use OESS::Collector;
-use OESS::Collector::TSDSPusher;
+use SIMP::Collector;
+use SIMP::Collector::TSDSPusher;
 
 has worker_name => (is => 'ro',
 		    required => 1);
@@ -51,7 +51,7 @@ sub run {
     $0 = $self->worker_name;
 
     # Set logging object
-    $self->_set_logger(Log::Log4perl->get_logger('OESS.Collector.Worker'));
+    $self->_set_logger(Log::Log4perl->get_logger('SIMP.Collector.Worker'));
 
     # Set worker properties
     $self->_load_config();
@@ -102,7 +102,7 @@ sub _load_config {
     ));
 
     # Create TSDS Pusher object
-    $self->_set_tsds_pusher(OESS::Collector::TSDSPusher->new(
+    $self->_set_tsds_pusher(SIMP::Collector::TSDSPusher->new(
 	logger => $self->logger,
 	worker_name => $self->worker_name,
 	tsds_config => $self->tsds_config,
@@ -153,7 +153,7 @@ sub _process_host {
 
     # Drop out if we get an error from Comp
     if (!defined($res) || $res->{'error'}) {
-	$self->logger->error($self->worker_name . " Comp error: " . OESS::Collector::error_message($res));
+	$self->logger->error($self->worker_name . " Comp error: " . SIMP::Collector::error_message($res));
 	return;
     }
 

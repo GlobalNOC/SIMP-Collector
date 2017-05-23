@@ -1,4 +1,4 @@
-package OESS::Collector::TSDSPusher;
+package SIMP::Collector::TSDSPusher;
 
 use strict;
 use warnings;
@@ -7,7 +7,7 @@ use Moo;
 use JSON::XS qw(encode_json);
 use Data::Dumper;
 
-use OESS::Collector;
+use SIMP::Collector;
 use GRNOC::WebService::Client;
 
 use constant MAX_TSDS_MESSAGES => 20;
@@ -50,7 +50,7 @@ sub push {
 	    data => encode_json(\@msgs)
 	);
 	if (!defined($res) || $res->{'error'}) {
-	    $self->logger->error($self->worker_name . " Error pushing data to TSDS: " . OESS::Collector::error_message($res));
+	    $self->logger->error($self->worker_name . " Error pushing data to TSDS: " . SIMP::Collector::error_message($res));
 	}
 	return 1;
     }

@@ -1,4 +1,4 @@
-package OESS::Collector::Creator;
+package SIMP::Collector::Creator;
 
 use strict;
 use warnings;
@@ -31,8 +31,8 @@ sub new {
     my $self = \%args;
     bless $self, $class;
 
-    Log::Log4perl->init('/etc/oess/logging.conf');
-    $self->{'log'} = Log::Log4perl->get_logger('OESS.Collector.Creator');
+    Log::Log4perl->init('/etc/simp/collector/logging.conf');
+    $self->{'log'} = Log::Log4perl->get_logger('SIMP.Collector.Creator');
 
     my $conf = GRNOC::Config->new(
         config_file => $self->{'config'},
@@ -100,7 +100,7 @@ sub start {
 
     for (my $i = 0; $i < MAX_PROCESSES; $i++) {
         $self->{'log'}->info("Starting worker $i.");
-        AnyEvent::Fork->new->require("OESS::Collector::Creation")->send_arg($i)->run("OESS::Collector::Creation::run", my $cv = AnyEvent->condvar);
+        AnyEvent::Fork->new->require("SIMP::Collector::Creation")->send_arg($i)->run("SIMP::Collector::Creation::run", my $cv = AnyEvent->condvar);
         $cv->recv;
     }
 

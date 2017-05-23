@@ -1,9 +1,9 @@
-package OESS::Collector;
+package SIMP::Collector;
 
 use strict;
 use warnings;
 
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
 
 sub new {
     my $caller = shift;
