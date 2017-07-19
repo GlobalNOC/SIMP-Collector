@@ -12,9 +12,10 @@
     interval: Polling interval - how frequently we will ask for data from Comp
     composite-name: Composite name from Comp we are interested in
     filter_name [optional]: If filtering results from SIMP, what field to filter on eg "node"
-    filter_value [optional]: If filtering results from SIMP, the value of the field to filter eg ".*chic.*"
+    filter_value [optional]: If filtering results from SIMP, the value of the field to filter eg ".*chic.*".
+                             This is passed in as a string representing a regular expression.
   -->
-  <collection interval='60' composite-name='interfaces' filter_name='' filter_value='^.*$' />
+  <collection interval='60' composite-name='interfaces' filter_name='' filter_value='' />
 
   <!--
     Hosts information:
