@@ -27,6 +27,8 @@ has tsds_config => (is => 'rwp');
 has hosts => (is => 'rwp', default => sub { [] });
 has interval => (is => 'rwp');
 has composite_name => (is => 'rwp');
+has filter_name => (is => 'rwp');
+has filter_value => (is => 'rwp');
 has workers => (is => 'rwp');
 has worker_client => (is => 'rwp');
 has children => (is => 'rwp', default => sub {[]});
@@ -132,6 +134,14 @@ sub _load_config {
 	die;
     }
 
+    $self->_set_filter_value($conf->get('/config/collection/@filter_value')->[0]);
+    $self->_set_filter_name($conf->get('/config/collection/@filter_name')->[0]);
+    if (($self->filter_name && ! $self->filter_value) || 
+	(!$self->filter_name && $self->filter_value)){
+	$self->logger->error("If filtering, both filter_name and filter_value must be specified");
+	die;
+    }
+
     $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 
     $self->_set_worker_client(undef);
@@ -229,6 +239,8 @@ sub _create_worker{
 						       simp_config => $self->simp_config,
 						       tsds_config => $self->tsds_config,
 						       interval => $self->interval,
+						       filter_name => $self->filter_name,
+						       filter_value => $self->filter_value
 						       );
 						   
 						   $worker->run();
