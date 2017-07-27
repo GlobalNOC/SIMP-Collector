@@ -34,6 +34,9 @@ has interval => (is => 'rwp',
 has composite_name => (is => 'rwp',
 		       required => 1);
 
+has filter_name => (is => 'rwp');
+has filter_value => (is => 'rwp');
+
 has simp_client => (is => 'rwp');
 has tsds_pusher => (is => 'rwp');
 has poll_w => (is => 'rwp');
@@ -124,17 +127,28 @@ sub _load_config {
 	    # Pull data for each host from Comp
 	    foreach my $host (@{$self->hosts}) {
 		$self->logger->info($self->worker_name . " processing $host");
-
-		$self->simp_client->$composite(
+		
+		my %args = (
 		    node           => $host,
 		    period         => $interval,
 		    async_callback => sub {
 			my $res = shift;
-
+			
 			# Process results and push when idle
 			$self->_process_host($res, $tm);
 			$self->_set_push_w(AnyEvent->idle(cb => sub { $self->_push_data; }));
-		    });
+		    }
+		    );
+
+		# if we're trying to only get a subset of values out of simp,
+ 		# add those arguments now. This presumes that SIMP and SIMP-collector
+		# have been correctly configured to have the data available
+		# validity is checked for earlier in Master
+		if ($self->filter_name){
+		    $args{$self->filter_name} = $self->filter_value;
+		}
+
+		$self->simp_client->$composite(%args);
 	    }
 
 	    # Push when idle
