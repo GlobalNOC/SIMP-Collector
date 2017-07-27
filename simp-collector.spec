@@ -1,7 +1,7 @@
 Summary: SIMP Collector
 Name: simp-collector
-Version: 1.0.2
-Release: 2
+Version: 1.0.4
+Release: 1
 License: APL 2.0
 Group: Network
 URL: http://globalnoc.iu.edu
