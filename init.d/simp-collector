@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-# oess-vlan-collector     init script for starting up the OESS VLAN collector daemon
+# simp-collector     init script for starting up the SIMP collector daemon
 #
 # chkconfig:   2345 20 80
-# description: Starts and stops the OESS VLAN collector daemon.
+# description: Starts and stops the SIMP collector daemon.
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -16,7 +16,7 @@ LOGGING="/etc/simp/collector/logging.conf"
 OTHER_ARGS='--user simp-collector --group simp-collector'
 
 # Variable overrides
-. /etc/sysconfig/oess-vlan-collector
+. /etc/sysconfig/simp-collector
 
 start() {
     [ -f $CONFIG ] || exit 6
