@@ -28,6 +28,9 @@ has tsds_config => (is => 'rwp',
 has hosts => (is => 'rwp',
 	      required => 1);
 
+has tsds_type => (is => 'rwp',
+                  required => 1);
+
 has interval => (is => 'rwp',
 		 required => 1);
 
@@ -177,35 +180,33 @@ sub _process_host {
 	$self->logger->error("Name: " . Dumper($node_name));
 	$self->logger->error("Value: " . Dumper($res->{'results'}->{$node_name}));
 
-	my $interfaces = $res->{'results'}->{$node_name};
-	foreach my $intf_name (keys %{$interfaces}) {
-	    my $intf = $interfaces->{$intf_name};
+	my $data = $res->{'results'}->{$node_name};
+	foreach my $datum_name (keys %{$data}) {
+	    my $datum = $data->{$datum_name};
 	    my %vals;
 	    my %meta;
-	    my $intf_tm = $tm;
+	    my $datum_tm = $tm;
 
-	    foreach my $key (keys %{$intf}) {
-		next if !defined($intf->{$key});
+	    foreach my $key (keys %{$datum}) {
+		next if !defined($datum->{$key});
 
 		if ($key eq 'time') {
-		    $intf_tm = $intf->{$key} + 0;
+		    $datum_tm = $datum->{$key} + 0;
 		} elsif ($key =~ /^\*/) {
 		    my $meta_key = substr($key, 1);
-		    $meta{$meta_key} = $intf->{$key};
+		    $meta{$meta_key} = $datum->{$key};
 		} else {
-		    $vals{$key} = $intf->{$key} + 0;
+		    $vals{$key} = $datum->{$key} + 0;
 		}
 	    }
-
+ 
 	    # Needed to handle bug in 3135:160
-	    next if !defined($vals{'input'}) || !defined($vals{'output'});
-
-	    $meta{'node'} = $node_name;
+	    next if ($self->tsds_type eq 'interface') && (!defined($vals{'input'}) || !defined($vals{'output'}));
 
 	    # push onto our queue for posting to TSDS
 	    push @{$self->msg_list}, {
-		type => 'interface',
-		time => $intf_tm,
+		type => $self->tsds_type,
+		time => $datum_tm,
 		interval => $self->interval,
 		values => \%vals,
 		meta => \%meta

@@ -118,6 +118,10 @@ sub _load_config {
     foreach my $collection (@{$self->collections}) {
         my $should_die = 0;
 
+        if (!defined($collection->{'tsds_type'}) || ($collection->{'tsds_type'} eq '')) {
+            $self->logger->error('No or invalid TSDS measurement type defined for a collection! Exiting.');
+            $should_die = 1;
+        }
         if (!defined($collection->{'interval'}) {
             $self->logger->error('Interval not defined for a collection! Exiting.');
             $should_die = 1;
@@ -243,6 +247,7 @@ sub _create_worker{
 						       hosts => $params{'hosts'},
 						       simp_config => $self->simp_config,
 						       tsds_config => $self->tsds_config,
+                                                       tsds_type => $collection->{'tsds_type'},
 						       interval => $collection->{'interval'},
 						       filter_name => $collection->{'filter_name'},
 						       filter_value => $collection->{'filter_value'}

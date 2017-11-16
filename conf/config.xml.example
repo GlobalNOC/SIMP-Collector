@@ -9,6 +9,7 @@
 
   <!-- 
     Collection details:
+    tsds_type: TSDS measurement type we will send the results from Comp as
     interval: Polling interval - how frequently we will ask for data from Comp
     composite-name: Composite name from Comp we are interested in
     filter_name [optional]: If filtering results from SIMP, what field to filter on eg "node"
@@ -18,7 +19,7 @@
     Host list: List of hosts to collect on
     (Hosts will be divided up among the number of configured workers)
   -->
-  <collection interval='60' composite-name='interfaces' filter_name='' filter_value='' workers='1'>
+  <collection tsds_type='interface' interval='60' composite-name='interfaces' filter_name='' filter_value='' workers='1'>
     <host>host.name.net</host>
     <host>host2.name.net</host>
   </collection>
