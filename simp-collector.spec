@@ -63,7 +63,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files
-%defattr(-,root,root,-)
+%defattr(644,root,root,755)
 %attr(755,root,root) %{execdir}/simp-collector
 %if 0%{?rhel} == 7
 %attr(644,root,root) /etc/systemd/system/simp-collector.service
