@@ -177,8 +177,8 @@ sub _process_host {
     # Take data from Comp and "package" for a post to TSDS
     foreach my $node_name (keys %{$res->{'results'}}) {
 
-	$self->logger->error("Name: " . Dumper($node_name));
-	$self->logger->error("Value: " . Dumper($res->{'results'}->{$node_name}));
+	$self->logger->debug($self->worker_name . ' Name: ' . Dumper($node_name));
+	$self->logger->debug($self->worker_name . ' Value: ' . Dumper($res->{'results'}->{$node_name}));
 
 	my $data = $res->{'results'}->{$node_name};
 	foreach my $datum_name (keys %{$data}) {
