@@ -116,30 +116,32 @@ sub _load_config {
 
     # Sanity-check some of the collection parameters
     foreach my $collection (@{$self->collections}) {
+        my $should_die = 0;
+
         if (!defined($collection->{'interval'}) {
             $self->logger->error('Interval not defined for a collection! Exiting.');
-            die;
-        }
-        if ($collection->{'interval'} < 1) {
+            $should_die = 1;
+        } elsif ($collection->{'interval'} < 1) {
             $self->logger->error("Invalid interval '$collection->{'interval'}'! Exiting.");
-            die;
+            $should_die = 1;
         }
         if (!defined($collection->{'composite-name'})) {
             $self->logger->error('Composite for a collection not defined! Exiting.');
-            die;
+            $should_die = 1;
         }
         if ($collection->{'filter_value'} xor $collection->{'filter_name'}) {
             $self->logger->error('If filtering, both filter_name and filter_value must be specified! Exiting.');
-            die;
+            $should_die = 1;
         }
         if (!defined($collection->{'workers'})) {
             $self->logger->error('Number of workers not defined for a collection! Exiting.');
-            die;
-        }
-        if ($collection->{'workers'} < 1) {
+            $should_die = 1;
+        } elsif ($collection->{'workers'} < 1) {
             $self->logger->error("Invalid number of workers '$collection->{'workers'}'! Exiting.");
-            die;
+            $should_die = 1;
         }
+
+        die if $should_die;
 
         $collection->{'host'} = [] if !defined($collection->{'host'});
     }
