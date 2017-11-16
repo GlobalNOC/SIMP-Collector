@@ -204,7 +204,7 @@ sub _create_workers_for_one_collection {
     my $idx = 0;
 
     # Divide up hosts in config among number of workers defined in config
-    foreach my $host (@{$collection->{'host'}}}) {
+    foreach my $host (@{$collection->{'host'}}) {
         next if !defined($host) || (ref($host) ne '');
 	push(@{$hosts_by_worker{$idx}}, $host);
 	$idx++;
