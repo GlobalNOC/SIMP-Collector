@@ -24,12 +24,7 @@ has run_group => (is => 'ro', required => 0);
 has logger => (is => 'rwp');
 has simp_config => (is => 'rwp');
 has tsds_config => (is => 'rwp');
-has hosts => (is => 'rwp', default => sub { [] });
-has interval => (is => 'rwp');
-has composite_name => (is => 'rwp');
-has filter_name => (is => 'rwp');
-has filter_value => (is => 'rwp');
-has workers => (is => 'rwp');
+has collections => (is => 'rwp', default => sub { [] });
 has worker_client => (is => 'rwp');
 has children => (is => 'rwp', default => sub {[]});
 has hup => (is => 'rwp', default => 0);
@@ -93,6 +88,7 @@ sub start {
 
     # Only run once unless HUP gets set, then reload and go again
     while (1) {
+        $self->_set_hup(0);
 	$self->_load_config();
 	$self->_create_workers();
 	last unless $self->hup;
@@ -116,37 +112,39 @@ sub _load_config {
 
     $self->_set_tsds_config($conf->get('/config/tsds')->[0]);
     
-    my @hosts;
-    foreach my $host (@{$conf->get('/config/hosts/host')}) {
-	push @hosts, $host if defined($host);
-    }
-    $self->_set_hosts(\@hosts);
+    $self->_set_collections($conf->get('/config/collection'));
 
-    $self->_set_interval($conf->get('/config/collection/@interval')->[0]);
-    if (!defined($self->interval)) {
-	$self->logger->error("Interval not defined! Exiting");
-	die;
-    }
+    # Sanity-check some of the collection parameters
+    foreach my $collection (@{$self->collections}) {
+        if (!defined($collection->{'interval'}) {
+            $self->logger->error('Interval not defined for a collection! Exiting.');
+            die;
+        }
+        if ($collection->{'interval'} < 1) {
+            $self->logger->error("Invalid interval '$collection->{'interval'}'! Exiting.");
+            die;
+        }
+        if (!defined($collection->{'composite-name'})) {
+            $self->logger->error('Composite for a collection not defined! Exiting.');
+            die;
+        }
+        if ($collection->{'filter_value'} xor $collection->{'filter_name'}) {
+            $self->logger->error('If filtering, both filter_name and filter_value must be specified! Exiting.');
+            die;
+        }
+        if (!defined($collection->{'workers'})) {
+            $self->logger->error('Number of workers not defined for a collection! Exiting.');
+            die;
+        }
+        if ($collection->{'workers'} < 1) {
+            $self->logger->error("Invalid number of workers '$collection->{'workers'}'! Exiting.");
+            die;
+        }
 
-    $self->_set_composite_name($conf->get('/config/collection/@composite-name')->[0]);
-    if (!defined($self->composite_name)) {
-	$self->logger->error("Composite not defined! Exiting");
-	die;
+        $collection->{'host'} = [] if !defined($collection->{'host'});
     }
-
-    $self->_set_filter_value($conf->get('/config/collection/@filter_value')->[0]);
-    $self->_set_filter_name($conf->get('/config/collection/@filter_name')->[0]);
-    if (($self->filter_name && ! $self->filter_value) || 
-	(!$self->filter_name && $self->filter_value)){
-	$self->logger->error("If filtering, both filter_name and filter_value must be specified");
-	die;
-    }
-
-    $self->_set_workers($conf->get('/config/hosts/@workers')->[0]);
 
     $self->_set_worker_client(undef);
-
-    $self->_set_hup(0);
 }
 
 #
@@ -155,31 +153,11 @@ sub _load_config {
 # to quit. Once all workers have joined this function returns.
 #
 sub _create_workers {
-    my ($self) = @_;
+    my $self = shift;
 
-    my %hosts_by_worker;
-    my $idx = 0;
-
-    # Divide up hosts in config among number of workers defined in config
-    foreach my $host (@{$self->hosts}) {
-	push(@{$hosts_by_worker{$idx}}, $host);
-	$idx++;
-	if ($idx >= $self->workers) {
-	    $idx = 0;
-	}
-    }
-
-    my $worker_names = [];
-    # Spawn workers
-    for (my $worker_id = 0; $worker_id < $self->workers; $worker_id++) {
-	my $proc;
-	my $init_proc;
-	my $worker_name = $self->composite_name . $worker_id;
-	push(@{$worker_names}, $worker_name);
-
-	$self->_create_worker( name => $worker_name,
-			       hosts => $hosts_by_worker{$worker_id});
-
+    # Create separate groups of workers for each collection
+    foreach my $collection (@{$self->collections}) {
+        $self->_create_workers_for_one_collection($collection);
     }
 
     $running = AnyEvent->condvar;
@@ -211,20 +189,47 @@ sub _create_workers {
     };
 
     $running->recv;
+}
 
+sub _create_workers_for_one_collection {
+    my ($self, $collection) = @_;
+
+    my %hosts_by_worker;
+    my $idx = 0;
+
+    # Divide up hosts in config among number of workers defined in config
+    foreach my $host (@{$collection->{'host'}}}) {
+        next if !defined($host) || (ref($host) ne '');
+	push(@{$hosts_by_worker{$idx}}, $host);
+	$idx++;
+	if ($idx >= $collection->{'workers'}) {
+	    $idx = 0;
+	}
+    }
+
+    # Spawn workers
+    for (my $worker_id = 0; $worker_id < $collection->{'workers'}; $worker_id++) {
+	my $proc;
+	my $init_proc;
+	my $worker_name = "$collection->{'composite-name'}_$worker_id";
+
+	$self->_create_worker( name       => $worker_name,
+                               collection => $collection,
+			       hosts      => $hosts_by_worker{$worker_id});
+    }
 }
 
 sub _create_worker{
     my $self = shift;
     my %params = @_;
+
+    my $collection = $params{'collection'};
     
     my $init_proc = AnyEvent::Subprocess->new( on_completion => sub {
 	$self->logger->error("Child " . $params{'name'} . " has died");
 	#do something to restart
 	#pop the worker off the queue
-	$self->_create_worker( name => $params{'name'},
-			       hosts => $params{'hosts'} );
-	
+	$self->_create_worker( %params );
 					       },
 					       code => sub {
 						   use GRNOC::Log;
@@ -234,13 +239,13 @@ sub _create_worker{
 						   my $worker = SIMP::Collector::Worker->new(
 						       worker_name => $params{'name'},
 						       logger => $self->logger,
-						       composite_name => $self->composite_name,
+						       composite_name => $collection->{'composite-name'},
 						       hosts => $params{'hosts'},
 						       simp_config => $self->simp_config,
 						       tsds_config => $self->tsds_config,
-						       interval => $self->interval,
-						       filter_name => $self->filter_name,
-						       filter_value => $self->filter_value
+						       interval => $collection->{'interval'},
+						       filter_name => $collection->{'filter_name'},
+						       filter_value => $collection->{'filter_value'}
 						       );
 						   
 						   $worker->run();

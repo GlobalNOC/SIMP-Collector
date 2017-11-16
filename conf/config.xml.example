@@ -14,17 +14,13 @@
     filter_name [optional]: If filtering results from SIMP, what field to filter on eg "node"
     filter_value [optional]: If filtering results from SIMP, the value of the field to filter eg ".*chic.*".
                              This is passed in as a string representing a regular expression.
-  -->
-  <collection interval='60' composite-name='interfaces' filter_name='' filter_value='' />
-
-  <!--
-    Hosts information:
-    Workers: How many Workers to create
+    workers: How many Workers to create
     Host list: List of hosts to collect on
     (Hosts will be divided up among the number of configured workers)
   -->
-  <hosts workers="1">
+  <collection interval='60' composite-name='interfaces' filter_name='' filter_value='' workers='1'>
     <host>host.name.net</host>
     <host>host2.name.net</host>
-  </hosts>
+  </collection>
+
 </config>
