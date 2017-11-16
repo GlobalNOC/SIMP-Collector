@@ -208,9 +208,7 @@ sub _create_workers_for_one_collection {
     }
 
     # Spawn workers
-    for (my $worker_id = 0; $worker_id < $collection->{'workers'}; $worker_id++) {
-	my $proc;
-	my $init_proc;
+    foreach my $worker_id (keys %hosts_by_worker) {
 	my $worker_name = "$collection->{'composite-name'}_$worker_id";
 
 	$self->_create_worker( name       => $worker_name,
