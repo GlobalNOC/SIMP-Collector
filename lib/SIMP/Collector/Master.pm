@@ -122,7 +122,7 @@ sub _load_config {
             $self->logger->error('No or invalid TSDS measurement type defined for a collection! Exiting.');
             $should_die = 1;
         }
-        if (!defined($collection->{'interval'}) {
+        if (!defined($collection->{'interval'})) {
             $self->logger->error('Interval not defined for a collection! Exiting.');
             $should_die = 1;
         } elsif ($collection->{'interval'} < 1) {
