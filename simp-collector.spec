@@ -18,7 +18,7 @@ Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), per
 %define sysconfdir /etc/sysconfig
 
 %description
-This program pulls SNMP network interface rate data from Simp and publishes to TSDS.
+This program pulls SNMP-derived data from Simp and publishes it to TSDS.
 
 %pre
 /usr/bin/getent group simp-collector > /dev/null || /usr/sbin/groupadd -r simp-collector
@@ -63,7 +63,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %files
-%defattr(-,root,root,-)
+%defattr(644,root,root,755)
 %attr(755,root,root) %{execdir}/simp-collector
 %if 0%{?rhel} == 7
 %attr(644,root,root) /etc/systemd/system/simp-collector.service
