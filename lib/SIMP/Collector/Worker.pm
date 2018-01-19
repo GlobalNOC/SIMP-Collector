@@ -188,20 +188,22 @@ sub _process_host {
 	    my $datum_tm = $tm;
 
 	    foreach my $key (keys %{$datum}) {
-		next if !defined($datum->{$key});
+                # This is commented out for now due to a bug in TSDS (3135:160)
+                # where bad things happen if a key is sent some of the time
+                # (as opposed to all the time or none of the time):
+                #next if !defined($datum->{$key});
 
 		if ($key eq 'time') {
+		    next if !defined($datum->{$key}); # workaround for 3135:160
 		    $datum_tm = $datum->{$key} + 0;
 		} elsif ($key =~ /^\*/) {
 		    my $meta_key = substr($key, 1);
 		    $meta{$meta_key} = $datum->{$key};
 		} else {
-		    $vals{$key} = $datum->{$key} + 0;
+                    # this can be simplified once 3135:160 is fixed
+		    $vals{$key} = (defined($datum->{$key})) ? $datum->{$key} + 0 : undef;
 		}
 	    }
- 
-	    # Needed to handle bug in 3135:160
-	    next if ($self->tsds_type eq 'interface') && (!defined($vals{'input'}) || !defined($vals{'output'}));
 
 	    # push onto our queue for posting to TSDS
 	    push @{$self->msg_list}, {
