@@ -228,34 +228,35 @@ sub _create_worker{
     my %params = @_;
 
     my $collection = $params{'collection'};
-    
-    my $init_proc = AnyEvent::Subprocess->new( on_completion => sub {
-	$self->logger->error("Child " . $params{'name'} . " has died");
-	#do something to restart
-	#pop the worker off the queue
-	$self->_create_worker( %params );
-					       },
-					       code => sub {
-						   use GRNOC::Log;
-						   use SIMP::Collector::Worker;
-						   
-						   $self->logger->info("Creating Collector for " . $params{'name'});
-						   my $worker = SIMP::Collector::Worker->new(
-						       worker_name => $params{'name'},
-						       logger => $self->logger,
-						       composite_name => $collection->{'composite-name'},
-						       hosts => $params{'hosts'},
-						       simp_config => $self->simp_config,
-						       tsds_config => $self->tsds_config,
-                                                       tsds_type => $collection->{'tsds_type'},
-						       interval => $collection->{'interval'},
-						       filter_name => $collection->{'filter_name'},
-						       filter_value => $collection->{'filter_value'}
-						       );
-						   
-						   $worker->run();
-					       });
-    
+
+    my $init_proc = AnyEvent::Subprocess->new(
+        on_completion => sub {
+            $self->logger->error("Child " . $params{'name'} . " has died");
+            #do something to restart
+            #pop the worker off the queue
+            $self->_create_worker( %params );
+        },
+        code => sub {
+            use GRNOC::Log;
+            use SIMP::Collector::Worker;
+
+            $self->logger->info("Creating Collector for " . $params{'name'});
+            my $worker = SIMP::Collector::Worker->new(
+                worker_name => $params{'name'},
+                logger => $self->logger,
+                composite_name => $collection->{'composite-name'},
+                hosts => $params{'hosts'},
+                simp_config => $self->simp_config,
+                tsds_config => $self->tsds_config,
+                tsds_type => $collection->{'tsds_type'},
+                interval => $collection->{'interval'},
+                filter_name => $collection->{'filter_name'},
+                filter_value => $collection->{'filter_value'},
+            );
+            $worker->run();
+        }
+    );
+
     my $proc = $init_proc->run();
     push(@{$self->children}, $proc);
 }
