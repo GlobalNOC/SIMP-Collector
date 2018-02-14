@@ -240,6 +240,9 @@ sub _create_worker{
             use GRNOC::Log;
             use SIMP::Collector::Worker;
 
+            my $required_vals = $collection->{'required_values'};
+            $required_vals = '' if !defined($required_vals);
+
             $self->logger->info("Creating Collector for " . $params{'name'});
             my $worker = SIMP::Collector::Worker->new(
                 worker_name => $params{'name'},
@@ -252,6 +255,7 @@ sub _create_worker{
                 interval => $collection->{'interval'},
                 filter_name => $collection->{'filter_name'},
                 filter_value => $collection->{'filter_value'},
+                required_value_fields => [ split(',', $required_vals) ],
             );
             $worker->run();
         }
