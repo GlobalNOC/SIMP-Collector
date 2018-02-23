@@ -10,7 +10,20 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:noarch
 
 BuildRequires: perl
-Requires: perl(Data::Dumper), perl(Getopt::Long), perl(AnyEvent), perl(Moo), perl(Types::Standard), perl(JSON::XS), perl(Proc::Daemon), perl(GRNOC::Config), perl(GRNOC::WebService::Client), perl(GRNOC::RabbitMQ::Client), perl(GRNOC::Log), perl(Parallel::ForkManager), perl(MooseX::Clone)
+Requires: perl(AnyEvent)
+Requires: perl(Data::Dumper)
+Requires: perl(Getopt::Long)
+Requires: perl(JSON::XS)
+Requires: perl(List::MoreUtils)
+Requires: perl(Moo)
+Requires: perl(MooseX::Clone)
+Requires: perl(Parallel::ForkManager)
+Requires: perl(Proc::Daemon)
+Requires: perl(Types::Standard)
+Requires: perl(GRNOC::Config)
+Requires: perl(GRNOC::WebService::Client)
+Requires: perl(GRNOC::RabbitMQ::Client)
+Requires: perl(GRNOC::Log)
 
 %define execdir /usr/sbin
 %define configdir /etc/simp/collector
