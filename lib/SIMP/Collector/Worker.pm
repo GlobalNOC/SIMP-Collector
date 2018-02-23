@@ -7,6 +7,8 @@ use Moo;
 use AnyEvent;
 use Data::Dumper;
 
+use List::MoreUtils qw(any);
+
 use GRNOC::RabbitMQ::Client;
 use GRNOC::RabbitMQ::Dispatcher;
 use GRNOC::RabbitMQ::Method;
@@ -39,6 +41,8 @@ has composite_name => (is => 'rwp',
 
 has filter_name => (is => 'rwp');
 has filter_value => (is => 'rwp');
+
+has required_value_fields => (is => 'rwp', default => sub { [] });
 
 has simp_client => (is => 'rwp');
 has tsds_pusher => (is => 'rwp');
@@ -174,6 +178,8 @@ sub _process_host {
 	return;
     }
 
+    my $required_values = $self->required_value_fields;
+
     # Take data from Comp and "package" for a post to TSDS
     foreach my $node_name (keys %{$res->{'results'}}) {
 
@@ -186,6 +192,10 @@ sub _process_host {
 	    my %vals;
 	    my %meta;
 	    my $datum_tm = $tm;
+
+            # this works properly when required_value_fields is empty,
+            # as any returns false then
+            next if (any { !defined($datum->{$_}) } @$required_values);
 
 	    foreach my $key (keys %{$datum}) {
                 # This is commented out for now due to a bug in TSDS (3135:160)
